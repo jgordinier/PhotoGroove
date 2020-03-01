@@ -15,8 +15,10 @@ type ThumbnailSize
     | Medium
     | Large 
 
-type alias Msg =
-    { description : String, data : String }
+type Msg =
+    ClickedPhoto String
+    | ClickedSize ThumbnailSize
+    | ClickedSurpriseMe
 type alias Model =
     {photos : List Photo, selectedUrl : String, chosenSize : ThumbnailSize}
 type alias Photo =
@@ -27,7 +29,7 @@ viewThumbnail selectedUrl thumb =
     img
         [ src (urlPrefix ++ thumb.url)
         , classList [ ( "selected", selectedUrl == thumb.url ) ]
-        , onClick { description="ClickedPhoto", data=thumb.url }
+        , onClick (ClickedPhoto thumb.url)
         ]
         []
 
@@ -52,7 +54,7 @@ view model =
     div [ class "content" ]
         [ h1 [] [ text "Photo Groove" ]
         , button
-        [ onClick { description = "ClickedSurpriseMe", data = "" } ]
+        [ onClick ClickedSurpriseMe ]
         [ text "Surprise Me!" ]
         , h3 [] [ text "Thumbnail Size:" ]
         , div [ id "choose-size" ]
@@ -91,13 +93,13 @@ getPhotoUrl index =
 
 update : Msg -> Model -> Model
 update msg model =
-    case msg.description of
-        "ClickedPhoto" ->
-            { model | selectedUrl = msg.data }
-        "ClickedSurpriseMe" ->
+    case msg of
+        ClickedSize size->
+            {model | chosenSize = size}
+        ClickedPhoto url ->
+            { model | selectedUrl = url }
+        ClickedSurpriseMe ->
             { model | selectedUrl = "2.jpeg" }
-        _->
-            model
 
 main =
     Browser.sandbox
