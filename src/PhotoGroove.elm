@@ -18,7 +18,7 @@ type ThumbnailSize
 
 type Msg 
     = ClickedPhoto String
-    | GotSelectedIndex Int
+    | GotRandomPhoto Photo
     | ClickedSize ThumbnailSize
     | ClickedSurpriseMe
 
@@ -100,22 +100,6 @@ initialModel =
     , chosenSize = Medium
     }
 
-photoArray : Array Photo
-photoArray = 
-    Array.fromList initialModel.photos
-
-getPhotoUrl : Int -> String
-getPhotoUrl index =
-    case Array.get index photoArray of
-    Just photo ->
-        photo.url
-    Nothing ->
-        ""
-
-randomPhotoPicker : Random.Generator Int
-randomPhotoPicker =
-    Random.int 0 (Array.length photoArray - 1)
-
 selectUrl : String -> Status -> Status
 selectUrl url status =
     case status of
@@ -131,16 +115,24 @@ selectUrl url status =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        GotSelectedIndex index ->
-            ( { model | status = selectUrl (getPhotoUrl index) model.status }
-            , Cmd.none
-            )
+        GotRandomPhoto photo ->
+            ( { model | status = selectUrl photo.url model.status }, Cmd.none )
         ClickedPhoto url ->
             ( { model | status = selectUrl url model.status }, Cmd.none )
         ClickedSize size ->
             ( { model | chosenSize = size }, Cmd.none )
         ClickedSurpriseMe ->
-            ( model, Random.generate GotSelectedIndex randomPhotoPicker )
+            case model.status of
+                Loaded (firstPhoto :: otherPhotos) _ ->
+                    Random.uniform firstPhoto otherPhotos
+                        |> Random.generate GotRandomPhoto
+                        |> Tuple.pair model
+                Loading ->
+                    ( model, Cmd.none )
+                Loaded [] _ ->
+                    ( model, Cmd.none )               
+                Errored errorMessage ->
+                    ( model, Cmd.none )
 main : Program () Model Msg
 main = 
     Browser.element
