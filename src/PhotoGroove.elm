@@ -22,6 +22,7 @@ type Msg
     | GotRandomPhoto Photo
     | ClickedSize ThumbnailSize
     | ClickedSurpriseMe
+    | GotPhotos (Result Http.Error String)
 
 type Status
     = Loading
@@ -134,6 +135,18 @@ update msg model =
                     ( model, Cmd.none )               
                 Errored errorMessage ->
                     ( model, Cmd.none )
+        GotPhotos (Ok responseStr) ->
+            case String.split "," responseStr of
+            (firstUrl :: _) as urls ->
+                let    
+                    photos =
+                        List.map Photo urls
+                in
+                        ( { model | status = Loaded photos firstUrl }, Cmd.none )
+            [] ->
+                ( { model | status = Errored "0 photos found" }, Cmd.none )
+        GotPhotos (Err _) ->
+            ( model, Cmd.none )
 main : Program () Model Msg
 main = 
     Browser.element
