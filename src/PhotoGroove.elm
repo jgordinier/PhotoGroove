@@ -1,12 +1,15 @@
 port module PhotoGroove exposing (..)
 
+
+--module Main exposing (FilterOptions, Model, Msg(..), Photo, Status(..), ThumbnailSize(..), applyFilters, initialCmd, initialModel, main, onSlide, photoDecoder, rangeSlider, selectUrl, setFilters, sizeToString, update, urlPrefix, view, viewFilter, viewLoaded, viewSizeChooser, viewThumbnail)
+
 import Array exposing (Array)
 import Browser
 import Html exposing (..)
 import Html.Attributes as Attr exposing (class, classList, id, name, property, src, title, type_)
 import Html.Events exposing (on, onClick)
 import Http
-import Json.Decode exposing (Decoder, at, int, list, string, succeed)
+import Json.Decode exposing (Decoder, at, int, list, string, succeed, Value)
 import Json.Decode.Pipeline exposing (optional, required)
 import Json.Encode as Encode
 import Random
@@ -32,6 +35,7 @@ type Msg
     | SlidHue Int
     | SlidRipple Int
     | SlidNoise Int
+    | GotActivity String
 
 
 type Status
@@ -46,10 +50,11 @@ type alias Model =
     , hue : Int
     , ripple : Int
     , noise : Int
+    , activity : String
     }
 
-
 port setFilters : FilterOptions -> Cmd msg
+port activityChanges : (Value -> msg) -> Sub msg
 
 
 type alias FilterOptions =
@@ -139,6 +144,7 @@ viewLoaded photos selectedUrl model =
     , button
         [ onClick ClickedSurpriseMe ]
         [ text "Surprise Me!" ]
+    , div [ class "activity" ] [ text model.activity ]    
     , div [ class "filters" ]
         [ viewFilter SlidHue "Hue" model.hue
         , viewFilter SlidRipple "Ripple" model.ripple
@@ -160,6 +166,7 @@ initialModel =
     , hue = 5
     , ripple = 5
     , noise = 5
+    , activity = ""
     }
 
 
@@ -187,6 +194,8 @@ selectUrl url status =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GotActivity activity ->
+            ( { model | activity = activity }, Cmd.none )
         GotRandomPhoto photo ->
             applyFilters { model | status = selectUrl photo.url model.status }
 
@@ -215,16 +224,9 @@ update msg model =
         GotPhotos (Ok photos) ->
             case photos of
                 first :: rest ->
-                    applyFilters
-                        { model
-                            | status =
-                                case List.head photos of
-                                    Just photo ->
-                                        Loaded photos photo.url
-                                        
-                                    Nothing ->
-                                        Loaded [] ""
-                        }
+                    applyFilters { model | status = Loaded photos first.url }
+                [] ->
+                    ( { model | status = Errored "0 photos found" }, Cmd.none )      
 
         GotPhotos (Err _) ->
             ( model, Cmd.none )
@@ -262,14 +264,21 @@ applyFilters model =
             ( model, Cmd.none )
 
 
-main : Program () Model Msg
+main : Program Value Model Msg
 main =
     Browser.element
-        { init = \_ -> ( initialModel, initialCmd )
+        { init = init
         , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = \_ -> activityChanges GotActivity
         }
+init : Float -> ( Model, Cmd Msg )
+init flags =
+    let
+        activity =
+            "Initializing Pasta v" ++ String.fromFloat flags
+    in
+    ( { initialModel | activity = activity }, initialCmd )
 
 
 rangeSlider : List (Attribute msg) -> List (Html msg) -> Html msg
