@@ -1,4 +1,4 @@
-port module PhotoGroove exposing (..)
+port module PhotoGroove exposing (main, photoDecoder)
 
 
 --module Main exposing (FilterOptions, Model, Msg(..), Photo, Status(..), ThumbnailSize(..), applyFilters, initialCmd, initialModel, main, onSlide, photoDecoder, rangeSlider, selectUrl, setFilters, sizeToString, update, urlPrefix, view, viewFilter, viewLoaded, viewSizeChooser, viewThumbnail)
@@ -9,7 +9,7 @@ import Html exposing (..)
 import Html.Attributes as Attr exposing (class, classList, id, name, property, src, title, type_)
 import Html.Events exposing (on, onClick)
 import Http
-import Json.Decode exposing (Decoder, at, int, list, string, succeed, Value)
+import Json.Decode exposing (Decoder, at, int, list, string, succeed)
 import Json.Decode.Pipeline exposing (optional, required)
 import Json.Encode as Encode
 import Random
@@ -54,7 +54,7 @@ type alias Model =
     }
 
 port setFilters : FilterOptions -> Cmd msg
-port activityChanges : (Value -> msg) -> Sub msg
+port activityChanges : (String -> msg) -> Sub msg
 
 
 type alias FilterOptions =
@@ -264,7 +264,7 @@ applyFilters model =
             ( model, Cmd.none )
 
 
-main : Program Value Model Msg
+main : Program Float Model Msg
 main =
     Browser.element
         { init = init
