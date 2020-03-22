@@ -20,13 +20,22 @@ decoderTest =
                 |> Result.map .title
                 |> Expect.equal (Ok "(untitled)")
 
-slidHueSetsHue : Test
-slidHueSetsHue =
-    fuzz int "SlidHue sets the hue" <|
+sliders : Test
+sliders =
+    describe "Slider sets the desired field in the Model"
+        [ testSlider "SlidHue" SlidHue .hue
+        , testSlider "SlidRipple" SlidRipple .ripple
+        , testSlider "SlidNoise" SlidNoise .noise
+        ]
+ 
+ 
+testSlider : String -> (Int -> Msg) -> (Model -> Int) -> Test
+testSlider description toMsg amountFromModel =
+    fuzz int description <|
         \amount ->
             initialModel
-                |> update (SlidHue amount)
+                |> update (toMsg amount)
                 |> Tuple.first
-                |> .hue
+                |> amountFromModel
                 |> Expect.equal amount
         

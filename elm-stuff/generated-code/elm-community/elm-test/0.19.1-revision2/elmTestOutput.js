@@ -7345,6 +7345,12 @@ var $author$project$Test$Runner$Node$run = F2(
 var $author$project$PhotoGroove$SlidHue = function (a) {
 	return {$: 'SlidHue', a: a};
 };
+var $author$project$PhotoGroove$SlidNoise = function (a) {
+	return {$: 'SlidNoise', a: a};
+};
+var $author$project$PhotoGroove$SlidRipple = function (a) {
+	return {$: 'SlidRipple', a: a};
+};
 var $author$project$PhotoGroove$Loading = {$: 'Loading'};
 var $author$project$PhotoGroove$Medium = {$: 'Medium'};
 var $author$project$PhotoGroove$initialModel = {activity: '', chosenSize: $author$project$PhotoGroove$Medium, hue: 5, noise: 5, ripple: 5, status: $author$project$PhotoGroove$Loading};
@@ -7620,20 +7626,51 @@ var $author$project$PhotoGroove$update = F2(
 						{noise: noise}));
 		}
 	});
-var $author$project$PhotoGrooveTests$slidHueSetsHue = A3(
-	$elm_explorations$test$Test$fuzz,
-	$elm_explorations$test$Fuzz$int,
-	'SlidHue sets the hue',
-	function (amount) {
-		return A2(
-			$elm_explorations$test$Expect$equal,
-			amount,
-			A2(
-				$author$project$PhotoGroove$update,
-				$author$project$PhotoGroove$SlidHue(amount),
-				$author$project$PhotoGroove$initialModel).a.hue);
+var $author$project$PhotoGrooveTests$testSlider = F3(
+	function (description, toMsg, amountFromModel) {
+		return A3(
+			$elm_explorations$test$Test$fuzz,
+			$elm_explorations$test$Fuzz$int,
+			description,
+			function (amount) {
+				return A2(
+					$elm_explorations$test$Expect$equal,
+					amount,
+					amountFromModel(
+						A2(
+							$author$project$PhotoGroove$update,
+							toMsg(amount),
+							$author$project$PhotoGroove$initialModel).a));
+			});
 	});
-var $author$project$Test$Generated$Main1640409395$main = A2(
+var $author$project$PhotoGrooveTests$sliders = A2(
+	$elm_explorations$test$Test$describe,
+	'Slider sets the desired field in the Model',
+	_List_fromArray(
+		[
+			A3(
+			$author$project$PhotoGrooveTests$testSlider,
+			'SlidHue',
+			$author$project$PhotoGroove$SlidHue,
+			function ($) {
+				return $.hue;
+			}),
+			A3(
+			$author$project$PhotoGrooveTests$testSlider,
+			'SlidRipple',
+			$author$project$PhotoGroove$SlidRipple,
+			function ($) {
+				return $.ripple;
+			}),
+			A3(
+			$author$project$PhotoGrooveTests$testSlider,
+			'SlidNoise',
+			$author$project$PhotoGroove$SlidNoise,
+			function ($) {
+				return $.noise;
+			})
+		]));
+var $author$project$Test$Generated$Main442611561$main = A2(
 	$author$project$Test$Runner$Node$run,
 	{
 		paths: _List_fromArray(
@@ -7641,7 +7678,7 @@ var $author$project$Test$Generated$Main1640409395$main = A2(
 		processes: 2,
 		report: $author$project$Test$Reporter$Reporter$ConsoleReport($author$project$Console$Text$UseColor),
 		runs: $elm$core$Maybe$Nothing,
-		seed: 128644490510432
+		seed: 54183289048354
 	},
 	$elm_explorations$test$Test$concat(
 		_List_fromArray(
@@ -7650,12 +7687,12 @@ var $author$project$Test$Generated$Main1640409395$main = A2(
 				$elm_explorations$test$Test$describe,
 				'PhotoGrooveTests',
 				_List_fromArray(
-					[$author$project$PhotoGrooveTests$decoderTest, $author$project$PhotoGrooveTests$slidHueSetsHue]))
+					[$author$project$PhotoGrooveTests$decoderTest, $author$project$PhotoGrooveTests$sliders]))
 			])));
-_Platform_export({'Test':{'Generated':{'Main1640409395':{'init':$author$project$Test$Generated$Main1640409395$main($elm$json$Json$Decode$int)(0)}}}});}(this));
+_Platform_export({'Test':{'Generated':{'Main442611561':{'init':$author$project$Test$Generated$Main442611561$main($elm$json$Json$Decode$int)(0)}}}});}(this));
 return this.Elm;
 })({});
-var pipeFilename = "/tmp/elm_test-9505.sock";
+var pipeFilename = "/tmp/elm_test-9896.sock";
 // Make sure necessary things are defined.
 if (typeof Elm === "undefined") {
   throw "test runner config error: Elm is not defined. Make sure you provide a file compiled by Elm!";
