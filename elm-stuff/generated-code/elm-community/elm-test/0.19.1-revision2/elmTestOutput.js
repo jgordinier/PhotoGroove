@@ -3358,7 +3358,7 @@ var $elm$core$Result$isOk = function (result) {
 		return false;
 	}
 };
-var $elm$json$Json$Decode$decodeString = _Json_runOnString;
+var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $elm_explorations$test$Test$Runner$Failure$Equality = F2(
 	function (a, b) {
 		return {$: 'Equality', a: a, b: b};
@@ -3407,6 +3407,595 @@ var $elm_explorations$test$Expect$equateWith = F4(
 		return usesFloats ? $elm_explorations$test$Expect$fail(floatError) : A5($elm_explorations$test$Expect$testWith, $elm_explorations$test$Test$Runner$Failure$Equality, reason, comparison, b, a);
 	});
 var $elm_explorations$test$Expect$equal = A2($elm_explorations$test$Expect$equateWith, 'Expect.equal', $elm$core$Basics$eq);
+var $elm_explorations$test$Test$Runner$Failure$InvalidFuzzer = {$: 'InvalidFuzzer'};
+var $elm_explorations$test$Test$Runner$Failure$BadDescription = {$: 'BadDescription'};
+var $elm_explorations$test$Test$Internal$blankDescriptionFailure = $elm_explorations$test$Test$Internal$failNow(
+	{
+		description: 'This test has a blank description. Let\'s give it a useful one!',
+		reason: $elm_explorations$test$Test$Runner$Failure$Invalid($elm_explorations$test$Test$Runner$Failure$BadDescription)
+	});
+var $elm$core$String$isEmpty = function (string) {
+	return string === '';
+};
+var $elm$core$String$trim = _String_trim;
+var $elm_explorations$test$Test$Internal$FuzzTest = function (a) {
+	return {$: 'FuzzTest', a: a};
+};
+var $elm_explorations$test$Test$Internal$Labeled = F2(
+	function (a, b) {
+		return {$: 'Labeled', a: a, b: b};
+	});
+var $elm_explorations$test$Test$Expectation$withGiven = F2(
+	function (newGiven, expectation) {
+		if (expectation.$ === 'Fail') {
+			var failure = expectation.a;
+			return $elm_explorations$test$Test$Expectation$Fail(
+				_Utils_update(
+					failure,
+					{
+						given: $elm$core$Maybe$Just(newGiven)
+					}));
+		} else {
+			return expectation;
+		}
+	});
+var $elm_explorations$test$Test$Fuzz$formatExpectation = function (_v0) {
+	var given = _v0.a;
+	var expectation = _v0.b;
+	return A2($elm_explorations$test$Test$Expectation$withGiven, given, expectation);
+};
+var $elm_explorations$test$RoseTree$Rose = F2(
+	function (a, b) {
+		return {$: 'Rose', a: a, b: b};
+	});
+var $elm_explorations$test$Lazy$force = function (piece) {
+	if (piece.$ === 'Evaluated') {
+		var a = piece.a;
+		return a;
+	} else {
+		var thunk = piece.a;
+		return thunk(_Utils_Tuple0);
+	}
+};
+var $elm_explorations$test$Lazy$List$headAndTail = function (list) {
+	var _v0 = $elm_explorations$test$Lazy$force(list);
+	if (_v0.$ === 'Nil') {
+		return $elm$core$Maybe$Nothing;
+	} else {
+		var first = _v0.a;
+		var rest = _v0.b;
+		return $elm$core$Maybe$Just(
+			_Utils_Tuple2(first, rest));
+	}
+};
+var $elm_explorations$test$Test$Fuzz$shrinkAndAdd = F4(
+	function (rootTree, getExpectation, rootsExpectation, failures) {
+		var shrink = F2(
+			function (oldExpectation, _v0) {
+				shrink:
+				while (true) {
+					var failingValue = _v0.a;
+					var branches = _v0.b;
+					var _v1 = $elm_explorations$test$Lazy$List$headAndTail(branches);
+					if (_v1.$ === 'Just') {
+						var _v2 = _v1.a;
+						var rosetree = _v2.a;
+						var possiblyFailingValue = rosetree.a;
+						var moreLazyRoseTrees = _v2.b;
+						var _v3 = getExpectation(possiblyFailingValue);
+						if (_v3.$ === 'Pass') {
+							var $temp$oldExpectation = oldExpectation,
+								$temp$_v0 = A2($elm_explorations$test$RoseTree$Rose, failingValue, moreLazyRoseTrees);
+							oldExpectation = $temp$oldExpectation;
+							_v0 = $temp$_v0;
+							continue shrink;
+						} else {
+							var newExpectation = _v3;
+							var _v4 = A2(shrink, newExpectation, rosetree);
+							var minimalValue = _v4.a;
+							var finalExpectation = _v4.b;
+							return _Utils_Tuple2(minimalValue, finalExpectation);
+						}
+					} else {
+						return _Utils_Tuple2(failingValue, oldExpectation);
+					}
+				}
+			});
+		var _v5 = A2(shrink, rootsExpectation, rootTree);
+		var rootMinimalValue = _v5.a;
+		var rootFinalExpectation = _v5.b;
+		return A3(
+			$elm$core$Dict$insert,
+			$elm_explorations$test$Test$Internal$toString(rootMinimalValue),
+			rootFinalExpectation,
+			failures);
+	});
+var $elm$random$Random$step = F2(
+	function (_v0, seed) {
+		var generator = _v0.a;
+		return generator(seed);
+	});
+var $elm_explorations$test$Test$Fuzz$findNewFailure = F5(
+	function (fuzzer, getExpectation, failures, currentSeed, value) {
+		var _v0 = getExpectation(value);
+		if (_v0.$ === 'Pass') {
+			return failures;
+		} else {
+			var failedExpectation = _v0;
+			var _v1 = A2($elm$random$Random$step, fuzzer, currentSeed);
+			var rosetree = _v1.a;
+			var nextSeed = _v1.b;
+			return A4($elm_explorations$test$Test$Fuzz$shrinkAndAdd, rosetree, getExpectation, failedExpectation, failures);
+		}
+	});
+var $elm$random$Random$Generator = function (a) {
+	return {$: 'Generator', a: a};
+};
+var $elm$random$Random$map = F2(
+	function (func, _v0) {
+		var genA = _v0.a;
+		return $elm$random$Random$Generator(
+			function (seed0) {
+				var _v1 = genA(seed0);
+				var a = _v1.a;
+				var seed1 = _v1.b;
+				return _Utils_Tuple2(
+					func(a),
+					seed1);
+			});
+	});
+var $elm_explorations$test$RoseTree$root = function (_v0) {
+	var a = _v0.a;
+	return a;
+};
+var $elm_explorations$test$Test$Fuzz$getFailures = F4(
+	function (fuzzer, getExpectation, initialSeed, totalRuns) {
+		var initialFailures = $elm$core$Dict$empty;
+		var genVal = A2($elm$random$Random$map, $elm_explorations$test$RoseTree$root, fuzzer);
+		var helper = F3(
+			function (currentSeed, remainingRuns, failures) {
+				helper:
+				while (true) {
+					var _v0 = A2($elm$random$Random$step, genVal, currentSeed);
+					var value = _v0.a;
+					var nextSeed = _v0.b;
+					var newFailures = A5($elm_explorations$test$Test$Fuzz$findNewFailure, fuzzer, getExpectation, failures, currentSeed, value);
+					if (remainingRuns <= 1) {
+						return newFailures;
+					} else {
+						var $temp$currentSeed = nextSeed,
+							$temp$remainingRuns = remainingRuns - 1,
+							$temp$failures = newFailures;
+						currentSeed = $temp$currentSeed;
+						remainingRuns = $temp$remainingRuns;
+						failures = $temp$failures;
+						continue helper;
+					}
+				}
+			});
+		return A3(helper, initialSeed, totalRuns, initialFailures);
+	});
+var $elm$core$Dict$isEmpty = function (dict) {
+	if (dict.$ === 'RBEmpty_elm_builtin') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm_explorations$test$Test$Fuzz$validatedFuzzTest = F3(
+	function (fuzzer, desc, getExpectation) {
+		var run = F2(
+			function (seed, runs) {
+				var failures = A4($elm_explorations$test$Test$Fuzz$getFailures, fuzzer, getExpectation, seed, runs);
+				return $elm$core$Dict$isEmpty(failures) ? _List_fromArray(
+					[$elm_explorations$test$Test$Expectation$Pass]) : A2(
+					$elm$core$List$map,
+					$elm_explorations$test$Test$Fuzz$formatExpectation,
+					$elm$core$Dict$toList(failures));
+			});
+		return A2(
+			$elm_explorations$test$Test$Internal$Labeled,
+			desc,
+			$elm_explorations$test$Test$Internal$FuzzTest(run));
+	});
+var $elm_explorations$test$Test$Fuzz$fuzzTest = F3(
+	function (fuzzer, untrimmedDesc, getExpectation) {
+		var desc = $elm$core$String$trim(untrimmedDesc);
+		if ($elm$core$String$isEmpty(desc)) {
+			return $elm_explorations$test$Test$Internal$blankDescriptionFailure;
+		} else {
+			if (fuzzer.$ === 'Err') {
+				var reason = fuzzer.a;
+				return $elm_explorations$test$Test$Internal$failNow(
+					{
+						description: reason,
+						reason: $elm_explorations$test$Test$Runner$Failure$Invalid($elm_explorations$test$Test$Runner$Failure$InvalidFuzzer)
+					});
+			} else {
+				var validFuzzer = fuzzer.a;
+				return A3($elm_explorations$test$Test$Fuzz$validatedFuzzTest, validFuzzer, desc, getExpectation);
+			}
+		}
+	});
+var $elm_explorations$test$Test$fuzz = $elm_explorations$test$Test$Fuzz$fuzzTest;
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $elm$random$Random$map2 = F3(
+	function (func, _v0, _v1) {
+		var genA = _v0.a;
+		var genB = _v1.a;
+		return $elm$random$Random$Generator(
+			function (seed0) {
+				var _v2 = genA(seed0);
+				var a = _v2.a;
+				var seed1 = _v2.b;
+				var _v3 = genB(seed1);
+				var b = _v3.a;
+				var seed2 = _v3.b;
+				return _Utils_Tuple2(
+					A2(func, a, b),
+					seed2);
+			});
+	});
+var $elm$core$Result$map2 = F3(
+	function (func, ra, rb) {
+		if (ra.$ === 'Err') {
+			var x = ra.a;
+			return $elm$core$Result$Err(x);
+		} else {
+			var a = ra.a;
+			if (rb.$ === 'Err') {
+				var x = rb.a;
+				return $elm$core$Result$Err(x);
+			} else {
+				var b = rb.a;
+				return $elm$core$Result$Ok(
+					A2(func, a, b));
+			}
+		}
+	});
+var $elm_explorations$test$Lazy$List$Cons = F2(
+	function (a, b) {
+		return {$: 'Cons', a: a, b: b};
+	});
+var $elm_explorations$test$Lazy$Lazy = function (a) {
+	return {$: 'Lazy', a: a};
+};
+var $elm_explorations$test$Lazy$lazy = function (thunk) {
+	return $elm_explorations$test$Lazy$Lazy(thunk);
+};
+var $elm_explorations$test$Lazy$List$append = F2(
+	function (list1, list2) {
+		return $elm_explorations$test$Lazy$lazy(
+			function (_v0) {
+				var _v1 = $elm_explorations$test$Lazy$force(list1);
+				if (_v1.$ === 'Nil') {
+					return $elm_explorations$test$Lazy$force(list2);
+				} else {
+					var first = _v1.a;
+					var rest = _v1.b;
+					return A2(
+						$elm_explorations$test$Lazy$List$Cons,
+						first,
+						A2($elm_explorations$test$Lazy$List$append, rest, list2));
+				}
+			});
+	});
+var $elm_explorations$test$Lazy$List$Nil = {$: 'Nil'};
+var $elm_explorations$test$Lazy$List$map = F2(
+	function (f, list) {
+		return $elm_explorations$test$Lazy$lazy(
+			function (_v0) {
+				var _v1 = $elm_explorations$test$Lazy$force(list);
+				if (_v1.$ === 'Nil') {
+					return $elm_explorations$test$Lazy$List$Nil;
+				} else {
+					var first = _v1.a;
+					var rest = _v1.b;
+					return A2(
+						$elm_explorations$test$Lazy$List$Cons,
+						f(first),
+						A2($elm_explorations$test$Lazy$List$map, f, rest));
+				}
+			});
+	});
+var $elm_explorations$test$Fuzz$map2RoseTree = F3(
+	function (transform, rose1, rose2) {
+		var root1 = rose1.a;
+		var children1 = rose1.b;
+		var root2 = rose2.a;
+		var children2 = rose2.b;
+		var shrink2 = A2(
+			$elm_explorations$test$Lazy$List$map,
+			function (subtree) {
+				return A3($elm_explorations$test$Fuzz$map2RoseTree, transform, rose1, subtree);
+			},
+			children2);
+		var shrink1 = A2(
+			$elm_explorations$test$Lazy$List$map,
+			function (subtree) {
+				return A3($elm_explorations$test$Fuzz$map2RoseTree, transform, subtree, rose2);
+			},
+			children1);
+		var root = A2(transform, root1, root2);
+		return A2(
+			$elm_explorations$test$RoseTree$Rose,
+			root,
+			A2($elm_explorations$test$Lazy$List$append, shrink1, shrink2));
+	});
+var $elm_explorations$test$Fuzz$map2 = F3(
+	function (transform, fuzzA, fuzzB) {
+		return A3(
+			A2(
+				$elm$core$Basics$composeL,
+				A2($elm$core$Basics$composeL, $elm$core$Result$map2, $elm$random$Random$map2),
+				$elm_explorations$test$Fuzz$map2RoseTree),
+			transform,
+			fuzzA,
+			fuzzB);
+	});
+var $elm_explorations$test$Fuzz$tuple = function (_v0) {
+	var fuzzerA = _v0.a;
+	var fuzzerB = _v0.b;
+	return A3(
+		$elm_explorations$test$Fuzz$map2,
+		F2(
+			function (a, b) {
+				return _Utils_Tuple2(a, b);
+			}),
+		fuzzerA,
+		fuzzerB);
+};
+var $elm_explorations$test$Test$fuzz2 = F3(
+	function (fuzzA, fuzzB, desc) {
+		var fuzzer = $elm_explorations$test$Fuzz$tuple(
+			_Utils_Tuple2(fuzzA, fuzzB));
+		return A2(
+			$elm$core$Basics$composeR,
+			F2(
+				function (f, _v0) {
+					var a = _v0.a;
+					var b = _v0.b;
+					return A2(f, a, b);
+				}),
+			A2($elm_explorations$test$Test$fuzz, fuzzer, desc));
+	});
+var $elm$random$Random$constant = function (value) {
+	return $elm$random$Random$Generator(
+		function (seed) {
+			return _Utils_Tuple2(value, seed);
+		});
+};
+var $elm_explorations$test$Fuzz$custom = F2(
+	function (generator, shrinker) {
+		var shrinkTree = function (a) {
+			return A2(
+				$elm_explorations$test$RoseTree$Rose,
+				a,
+				$elm_explorations$test$Lazy$lazy(
+					function (_v0) {
+						return $elm_explorations$test$Lazy$force(
+							A2(
+								$elm_explorations$test$Lazy$List$map,
+								shrinkTree,
+								shrinker(a)));
+					}));
+		};
+		return $elm$core$Result$Ok(
+			A2($elm$random$Random$map, shrinkTree, generator));
+	});
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var $elm$random$Random$andThen = F2(
+	function (callback, _v0) {
+		var genA = _v0.a;
+		return $elm$random$Random$Generator(
+			function (seed) {
+				var _v1 = genA(seed);
+				var result = _v1.a;
+				var newSeed = _v1.b;
+				var _v2 = callback(result);
+				var genB = _v2.a;
+				return genB(newSeed);
+			});
+	});
+var $elm$core$Bitwise$and = _Bitwise_and;
+var $elm$random$Random$Seed = F2(
+	function (a, b) {
+		return {$: 'Seed', a: a, b: b};
+	});
+var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
+var $elm$random$Random$next = function (_v0) {
+	var state0 = _v0.a;
+	var incr = _v0.b;
+	return A2($elm$random$Random$Seed, ((state0 * 1664525) + incr) >>> 0, incr);
+};
+var $elm$core$Bitwise$xor = _Bitwise_xor;
+var $elm$random$Random$peel = function (_v0) {
+	var state = _v0.a;
+	var word = (state ^ (state >>> ((state >>> 28) + 4))) * 277803737;
+	return ((word >>> 22) ^ word) >>> 0;
+};
+var $elm$random$Random$float = F2(
+	function (a, b) {
+		return $elm$random$Random$Generator(
+			function (seed0) {
+				var seed1 = $elm$random$Random$next(seed0);
+				var range = $elm$core$Basics$abs(b - a);
+				var n1 = $elm$random$Random$peel(seed1);
+				var n0 = $elm$random$Random$peel(seed0);
+				var lo = (134217727 & n1) * 1.0;
+				var hi = (67108863 & n0) * 1.0;
+				var val = ((hi * 134217728.0) + lo) / 9007199254740992.0;
+				var scaled = (val * range) + a;
+				return _Utils_Tuple2(
+					scaled,
+					$elm$random$Random$next(seed1));
+			});
+	});
+var $elm$core$List$sum = function (numbers) {
+	return A3($elm$core$List$foldl, $elm$core$Basics$add, 0, numbers);
+};
+var $elm_explorations$test$MicroRandomExtra$frequency = F2(
+	function (firstPair, restPairs) {
+		var total = $elm$core$List$sum(
+			A2(
+				$elm$core$List$map,
+				A2($elm$core$Basics$composeL, $elm$core$Basics$abs, $elm$core$Tuple$first),
+				A2($elm$core$List$cons, firstPair, restPairs)));
+		var pick = F3(
+			function (_v0, restChoices, n) {
+				pick:
+				while (true) {
+					var k = _v0.a;
+					var g = _v0.b;
+					if (_Utils_cmp(n, k) < 1) {
+						return g;
+					} else {
+						if (!restChoices.b) {
+							return g;
+						} else {
+							var next = restChoices.a;
+							var rest = restChoices.b;
+							var $temp$_v0 = next,
+								$temp$restChoices = rest,
+								$temp$n = n - k;
+							_v0 = $temp$_v0;
+							restChoices = $temp$restChoices;
+							n = $temp$n;
+							continue pick;
+						}
+					}
+				}
+			});
+		return A2(
+			$elm$random$Random$andThen,
+			A2(pick, firstPair, restPairs),
+			A2($elm$random$Random$float, 0, total));
+	});
+var $elm$random$Random$int = F2(
+	function (a, b) {
+		return $elm$random$Random$Generator(
+			function (seed0) {
+				var _v0 = (_Utils_cmp(a, b) < 0) ? _Utils_Tuple2(a, b) : _Utils_Tuple2(b, a);
+				var lo = _v0.a;
+				var hi = _v0.b;
+				var range = (hi - lo) + 1;
+				if (!((range - 1) & range)) {
+					return _Utils_Tuple2(
+						(((range - 1) & $elm$random$Random$peel(seed0)) >>> 0) + lo,
+						$elm$random$Random$next(seed0));
+				} else {
+					var threshhold = (((-range) >>> 0) % range) >>> 0;
+					var accountForBias = function (seed) {
+						accountForBias:
+						while (true) {
+							var x = $elm$random$Random$peel(seed);
+							var seedN = $elm$random$Random$next(seed);
+							if (_Utils_cmp(x, threshhold) < 0) {
+								var $temp$seed = seedN;
+								seed = $temp$seed;
+								continue accountForBias;
+							} else {
+								return _Utils_Tuple2((x % range) + lo, seedN);
+							}
+						}
+					};
+					return accountForBias(seed0);
+				}
+			});
+	});
+var $elm_explorations$test$Lazy$List$cons = F2(
+	function (a, list) {
+		return $elm_explorations$test$Lazy$lazy(
+			function (_v0) {
+				return A2($elm_explorations$test$Lazy$List$Cons, a, list);
+			});
+	});
+var $elm_explorations$test$Lazy$List$empty = $elm_explorations$test$Lazy$lazy(
+	function (_v0) {
+		return $elm_explorations$test$Lazy$List$Nil;
+	});
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm_explorations$test$Shrink$seriesInt = F2(
+	function (low, high) {
+		if (_Utils_cmp(low, high) > -1) {
+			return $elm_explorations$test$Lazy$List$empty;
+		} else {
+			if (_Utils_eq(low, high - 1)) {
+				return A2($elm_explorations$test$Lazy$List$cons, low, $elm_explorations$test$Lazy$List$empty);
+			} else {
+				var low_ = low + (((high - low) / 2) | 0);
+				return A2(
+					$elm_explorations$test$Lazy$List$cons,
+					low,
+					A2($elm_explorations$test$Shrink$seriesInt, low_, high));
+			}
+		}
+	});
+var $elm_explorations$test$Shrink$int = function (n) {
+	return (n < 0) ? A2(
+		$elm_explorations$test$Lazy$List$cons,
+		-n,
+		A2(
+			$elm_explorations$test$Lazy$List$map,
+			$elm$core$Basics$mul(-1),
+			A2($elm_explorations$test$Shrink$seriesInt, 0, -n))) : A2($elm_explorations$test$Shrink$seriesInt, 0, n);
+};
+var $elm$random$Random$maxInt = 2147483647;
+var $elm$random$Random$minInt = -2147483648;
+var $elm_explorations$test$Fuzz$int = function () {
+	var generator = A2(
+		$elm_explorations$test$MicroRandomExtra$frequency,
+		_Utils_Tuple2(
+			3,
+			A2($elm$random$Random$int, -50, 50)),
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				0.2,
+				$elm$random$Random$constant(0)),
+				_Utils_Tuple2(
+				1,
+				A2($elm$random$Random$int, 0, $elm$random$Random$maxInt - $elm$random$Random$minInt)),
+				_Utils_Tuple2(
+				1,
+				A2($elm$random$Random$int, $elm$random$Random$minInt - $elm$random$Random$maxInt, 0))
+			]));
+	return A2($elm_explorations$test$Fuzz$custom, generator, $elm_explorations$test$Shrink$int);
+}();
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $elm$core$Result$map = F2(
+	function (func, ra) {
+		if (ra.$ === 'Ok') {
+			var a = ra.a;
+			return $elm$core$Result$Ok(
+				func(a));
+		} else {
+			var e = ra.a;
+			return $elm$core$Result$Err(e);
+		}
+	});
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
 var $author$project$PhotoGroove$Photo = F3(
 	function (url, size, title) {
 		return {size: size, title: title, url: url};
@@ -3416,7 +4005,6 @@ var $elm$json$Json$Decode$map2 = _Json_map2;
 var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = $elm$json$Json$Decode$map2($elm$core$Basics$apR);
 var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$andThen = _Json_andThen;
-var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $elm$json$Json$Decode$fail = _Json_fail;
 var $elm$json$Json$Decode$null = _Json_decodeNull;
 var $elm$json$Json$Decode$oneOf = _Json_oneOf;
@@ -3487,44 +4075,434 @@ var $author$project$PhotoGroove$photoDecoder = A4(
 			'url',
 			$elm$json$Json$Decode$string,
 			$elm$json$Json$Decode$succeed($author$project$PhotoGroove$Photo))));
-var $elm_explorations$test$Test$Internal$Labeled = F2(
-	function (a, b) {
-		return {$: 'Labeled', a: a, b: b};
+var $elm$core$Char$fromCode = _Char_fromCode;
+var $elm_explorations$test$Fuzz$asciiCharGenerator = A2(
+	$elm$random$Random$map,
+	$elm$core$Char$fromCode,
+	A2($elm$random$Random$int, 32, 126));
+var $elm$core$String$fromList = _String_fromList;
+var $elm$random$Random$listHelp = F4(
+	function (revList, n, gen, seed) {
+		listHelp:
+		while (true) {
+			if (n < 1) {
+				return _Utils_Tuple2(revList, seed);
+			} else {
+				var _v0 = gen(seed);
+				var value = _v0.a;
+				var newSeed = _v0.b;
+				var $temp$revList = A2($elm$core$List$cons, value, revList),
+					$temp$n = n - 1,
+					$temp$gen = gen,
+					$temp$seed = newSeed;
+				revList = $temp$revList;
+				n = $temp$n;
+				gen = $temp$gen;
+				seed = $temp$seed;
+				continue listHelp;
+			}
+		}
 	});
-var $elm_explorations$test$Test$Runner$Failure$BadDescription = {$: 'BadDescription'};
-var $elm_explorations$test$Test$Internal$blankDescriptionFailure = $elm_explorations$test$Test$Internal$failNow(
-	{
-		description: 'This test has a blank description. Let\'s give it a useful one!',
-		reason: $elm_explorations$test$Test$Runner$Failure$Invalid($elm_explorations$test$Test$Runner$Failure$BadDescription)
+var $elm$random$Random$list = F2(
+	function (n, _v0) {
+		var gen = _v0.a;
+		return $elm$random$Random$Generator(
+			function (seed) {
+				return A4($elm$random$Random$listHelp, _List_Nil, n, gen, seed);
+			});
 	});
-var $elm$core$String$isEmpty = function (string) {
-	return string === '';
-};
-var $elm$core$String$trim = _String_trim;
-var $elm_explorations$test$Test$test = F2(
-	function (untrimmedDesc, thunk) {
-		var desc = $elm$core$String$trim(untrimmedDesc);
-		return $elm$core$String$isEmpty(desc) ? $elm_explorations$test$Test$Internal$blankDescriptionFailure : A2(
-			$elm_explorations$test$Test$Internal$Labeled,
-			desc,
-			$elm_explorations$test$Test$Internal$UnitTest(
-				function (_v0) {
-					return _List_fromArray(
-						[
-							thunk(_Utils_Tuple0)
-						]);
-				}));
-	});
-var $author$project$PhotoGrooveTests$decoderTest = A2(
-	$elm_explorations$test$Test$test,
-	'title defaults to (untitled)',
-	function (_v0) {
+var $elm_explorations$test$MicroRandomExtra$lengthString = F2(
+	function (charGenerator, stringLength) {
 		return A2(
-			$elm_explorations$test$Expect$equal,
-			$elm$core$Result$Ok(
-				{size: 5, title: '(untitled)', url: 'fruits.com'}),
-			A2($elm$json$Json$Decode$decodeString, $author$project$PhotoGroove$photoDecoder, ' \n            {"url": "fruits.com", "size": 5}\n            '));
+			$elm$random$Random$map,
+			$elm$core$String$fromList,
+			A2($elm$random$Random$list, stringLength, charGenerator));
 	});
+var $elm_explorations$test$Shrink$atLeastInt = F2(
+	function (min, n) {
+		return ((n < 0) && (_Utils_cmp(n, min) > -1)) ? A2(
+			$elm_explorations$test$Lazy$List$cons,
+			-n,
+			A2(
+				$elm_explorations$test$Lazy$List$map,
+				$elm$core$Basics$mul(-1),
+				A2($elm_explorations$test$Shrink$seriesInt, 0, -n))) : A2(
+			$elm_explorations$test$Shrink$seriesInt,
+			A2($elm$core$Basics$max, 0, min),
+			n);
+	});
+var $elm_explorations$test$Shrink$convert = F4(
+	function (f, g, shrinker, b) {
+		return A2(
+			$elm_explorations$test$Lazy$List$map,
+			f,
+			shrinker(
+				g(b)));
+	});
+var $elm_explorations$test$Shrink$atLeastChar = function (ch) {
+	return A3(
+		$elm_explorations$test$Shrink$convert,
+		$elm$core$Char$fromCode,
+		$elm$core$Char$toCode,
+		$elm_explorations$test$Shrink$atLeastInt(
+			$elm$core$Char$toCode(ch)));
+};
+var $elm_explorations$test$Shrink$character = $elm_explorations$test$Shrink$atLeastChar(
+	$elm$core$Char$fromCode(32));
+var $elm_explorations$test$Lazy$List$fromList = A2($elm$core$List$foldr, $elm_explorations$test$Lazy$List$cons, $elm_explorations$test$Lazy$List$empty);
+var $elm_explorations$test$Lazy$List$flatten = function (list) {
+	return $elm_explorations$test$Lazy$lazy(
+		function (_v0) {
+			var _v1 = $elm_explorations$test$Lazy$force(list);
+			if (_v1.$ === 'Nil') {
+				return $elm_explorations$test$Lazy$List$Nil;
+			} else {
+				var first = _v1.a;
+				var rest = _v1.b;
+				return $elm_explorations$test$Lazy$force(
+					A2(
+						$elm_explorations$test$Lazy$List$append,
+						first,
+						$elm_explorations$test$Lazy$List$flatten(rest)));
+			}
+		});
+};
+var $elm_explorations$test$Lazy$List$andThen = F2(
+	function (f, list) {
+		return $elm_explorations$test$Lazy$List$flatten(
+			A2($elm_explorations$test$Lazy$List$map, f, list));
+	});
+var $elm_explorations$test$Lazy$List$drop = F2(
+	function (n, list) {
+		return $elm_explorations$test$Lazy$lazy(
+			function (_v0) {
+				if (n <= 0) {
+					return $elm_explorations$test$Lazy$force(list);
+				} else {
+					var _v1 = $elm_explorations$test$Lazy$force(list);
+					if (_v1.$ === 'Nil') {
+						return $elm_explorations$test$Lazy$List$Nil;
+					} else {
+						var first = _v1.a;
+						var rest = _v1.b;
+						return $elm_explorations$test$Lazy$force(
+							A2($elm_explorations$test$Lazy$List$drop, n - 1, rest));
+					}
+				}
+			});
+	});
+var $elm_explorations$test$Lazy$List$isEmpty = function (list) {
+	var _v0 = $elm_explorations$test$Lazy$force(list);
+	if (_v0.$ === 'Nil') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm_explorations$test$Lazy$List$iterate = F2(
+	function (f, a) {
+		return $elm_explorations$test$Lazy$lazy(
+			function (_v0) {
+				return A2(
+					$elm_explorations$test$Lazy$List$Cons,
+					a,
+					A2(
+						$elm_explorations$test$Lazy$List$iterate,
+						f,
+						f(a)));
+			});
+	});
+var $elm_explorations$test$Lazy$List$reduce = F3(
+	function (reducer, b, list) {
+		reduce:
+		while (true) {
+			var _v0 = $elm_explorations$test$Lazy$force(list);
+			if (_v0.$ === 'Nil') {
+				return b;
+			} else {
+				var first = _v0.a;
+				var rest = _v0.b;
+				var $temp$reducer = reducer,
+					$temp$b = A2(reducer, first, b),
+					$temp$list = rest;
+				reducer = $temp$reducer;
+				b = $temp$b;
+				list = $temp$list;
+				continue reduce;
+			}
+		}
+	});
+var $elm_explorations$test$Lazy$List$length = A2(
+	$elm_explorations$test$Lazy$List$reduce,
+	F2(
+		function (_v0, n) {
+			return n + 1;
+		}),
+	0);
+var $elm_explorations$test$Lazy$List$take = F2(
+	function (n, list) {
+		return $elm_explorations$test$Lazy$lazy(
+			function (_v0) {
+				if (n <= 0) {
+					return $elm_explorations$test$Lazy$List$Nil;
+				} else {
+					var _v1 = $elm_explorations$test$Lazy$force(list);
+					if (_v1.$ === 'Nil') {
+						return $elm_explorations$test$Lazy$List$Nil;
+					} else {
+						var first = _v1.a;
+						var rest = _v1.b;
+						return A2(
+							$elm_explorations$test$Lazy$List$Cons,
+							first,
+							A2($elm_explorations$test$Lazy$List$take, n - 1, rest));
+					}
+				}
+			});
+	});
+var $elm_explorations$test$Lazy$List$takeWhile = F2(
+	function (predicate, list) {
+		return $elm_explorations$test$Lazy$lazy(
+			function (_v0) {
+				var _v1 = $elm_explorations$test$Lazy$force(list);
+				if (_v1.$ === 'Nil') {
+					return $elm_explorations$test$Lazy$List$Nil;
+				} else {
+					var first = _v1.a;
+					var rest = _v1.b;
+					return predicate(first) ? A2(
+						$elm_explorations$test$Lazy$List$Cons,
+						first,
+						A2($elm_explorations$test$Lazy$List$takeWhile, predicate, rest)) : $elm_explorations$test$Lazy$List$Nil;
+				}
+			});
+	});
+var $elm_explorations$test$Shrink$lazylist = F2(
+	function (shrinker, l) {
+		return $elm_explorations$test$Lazy$lazy(
+			function (_v0) {
+				var shrinkOneHelp = function (lst) {
+					return $elm_explorations$test$Lazy$lazy(
+						function (_v1) {
+							var _v2 = $elm_explorations$test$Lazy$force(lst);
+							if (_v2.$ === 'Nil') {
+								return $elm_explorations$test$Lazy$force($elm_explorations$test$Lazy$List$empty);
+							} else {
+								var x = _v2.a;
+								var xs = _v2.b;
+								return $elm_explorations$test$Lazy$force(
+									A2(
+										$elm_explorations$test$Lazy$List$append,
+										A2(
+											$elm_explorations$test$Lazy$List$map,
+											function (val) {
+												return A2($elm_explorations$test$Lazy$List$cons, val, xs);
+											},
+											shrinker(x)),
+										A2(
+											$elm_explorations$test$Lazy$List$map,
+											$elm_explorations$test$Lazy$List$cons(x),
+											shrinkOneHelp(xs))));
+							}
+						});
+				};
+				var removes = F3(
+					function (k_, n_, l_) {
+						return $elm_explorations$test$Lazy$lazy(
+							function (_v3) {
+								if (_Utils_cmp(k_, n_) > 0) {
+									return $elm_explorations$test$Lazy$force($elm_explorations$test$Lazy$List$empty);
+								} else {
+									if ($elm_explorations$test$Lazy$List$isEmpty(l_)) {
+										return $elm_explorations$test$Lazy$force(
+											A2($elm_explorations$test$Lazy$List$cons, $elm_explorations$test$Lazy$List$empty, $elm_explorations$test$Lazy$List$empty));
+									} else {
+										var rest = A2($elm_explorations$test$Lazy$List$drop, k_, l_);
+										var first = A2($elm_explorations$test$Lazy$List$take, k_, l_);
+										return $elm_explorations$test$Lazy$force(
+											A2(
+												$elm_explorations$test$Lazy$List$cons,
+												rest,
+												A2(
+													$elm_explorations$test$Lazy$List$map,
+													$elm_explorations$test$Lazy$List$append(first),
+													A3(removes, k_, n_ - k_, rest))));
+									}
+								}
+							});
+					});
+				var n = $elm_explorations$test$Lazy$List$length(l);
+				return $elm_explorations$test$Lazy$force(
+					A2(
+						$elm_explorations$test$Lazy$List$append,
+						A2(
+							$elm_explorations$test$Lazy$List$andThen,
+							function (k) {
+								return A3(removes, k, n, l);
+							},
+							A2(
+								$elm_explorations$test$Lazy$List$takeWhile,
+								function (x) {
+									return x > 0;
+								},
+								A2(
+									$elm_explorations$test$Lazy$List$iterate,
+									function (num) {
+										return (num / 2) | 0;
+									},
+									n))),
+						shrinkOneHelp(l)));
+			});
+	});
+var $elm_explorations$test$Lazy$List$toList = function (list) {
+	var _v0 = $elm_explorations$test$Lazy$force(list);
+	if (_v0.$ === 'Nil') {
+		return _List_Nil;
+	} else {
+		var first = _v0.a;
+		var rest = _v0.b;
+		return A2(
+			$elm$core$List$cons,
+			first,
+			$elm_explorations$test$Lazy$List$toList(rest));
+	}
+};
+var $elm_explorations$test$Shrink$list = function (shrinker) {
+	return A3(
+		$elm_explorations$test$Shrink$convert,
+		$elm_explorations$test$Lazy$List$toList,
+		$elm_explorations$test$Lazy$List$fromList,
+		$elm_explorations$test$Shrink$lazylist(shrinker));
+};
+var $elm$core$String$foldr = _String_foldr;
+var $elm$core$String$toList = function (string) {
+	return A3($elm$core$String$foldr, $elm$core$List$cons, _List_Nil, string);
+};
+var $elm_explorations$test$Shrink$string = A3(
+	$elm_explorations$test$Shrink$convert,
+	$elm$core$String$fromList,
+	$elm$core$String$toList,
+	$elm_explorations$test$Shrink$list($elm_explorations$test$Shrink$character));
+var $elm_explorations$test$MicroRandomExtra$sample = function () {
+	var find = F2(
+		function (k, ys) {
+			find:
+			while (true) {
+				if (!ys.b) {
+					return $elm$core$Maybe$Nothing;
+				} else {
+					var z = ys.a;
+					var zs = ys.b;
+					if (!k) {
+						return $elm$core$Maybe$Just(z);
+					} else {
+						var $temp$k = k - 1,
+							$temp$ys = zs;
+						k = $temp$k;
+						ys = $temp$ys;
+						continue find;
+					}
+				}
+			}
+		});
+	return function (xs) {
+		return A2(
+			$elm$random$Random$map,
+			function (i) {
+				return A2(find, i, xs);
+			},
+			A2(
+				$elm$random$Random$int,
+				0,
+				$elm$core$List$length(xs) - 1));
+	};
+}();
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $elm_explorations$test$Fuzz$whitespaceCharGenerator = A2(
+	$elm$random$Random$map,
+	$elm$core$Maybe$withDefault(
+		_Utils_chr(' ')),
+	$elm_explorations$test$MicroRandomExtra$sample(
+		_List_fromArray(
+			[
+				_Utils_chr(' '),
+				_Utils_chr('\t'),
+				_Utils_chr('\n')
+			])));
+var $elm_explorations$test$Fuzz$string = function () {
+	var whitespaceGenerator = A2(
+		$elm$random$Random$andThen,
+		$elm_explorations$test$MicroRandomExtra$lengthString($elm_explorations$test$Fuzz$whitespaceCharGenerator),
+		A2($elm$random$Random$int, 1, 10));
+	var asciiGenerator = A2(
+		$elm$random$Random$andThen,
+		$elm_explorations$test$MicroRandomExtra$lengthString($elm_explorations$test$Fuzz$asciiCharGenerator),
+		A2(
+			$elm_explorations$test$MicroRandomExtra$frequency,
+			_Utils_Tuple2(
+				3,
+				A2($elm$random$Random$int, 1, 10)),
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					0.2,
+					$elm$random$Random$constant(0)),
+					_Utils_Tuple2(
+					1,
+					A2($elm$random$Random$int, 11, 50)),
+					_Utils_Tuple2(
+					1,
+					A2($elm$random$Random$int, 50, 1000))
+				])));
+	return A2(
+		$elm_explorations$test$Fuzz$custom,
+		A2(
+			$elm_explorations$test$MicroRandomExtra$frequency,
+			_Utils_Tuple2(9, asciiGenerator),
+			_List_fromArray(
+				[
+					_Utils_Tuple2(1, whitespaceGenerator)
+				])),
+		$elm_explorations$test$Shrink$string);
+}();
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$PhotoGrooveTests$decoderTest = A4(
+	$elm_explorations$test$Test$fuzz2,
+	$elm_explorations$test$Fuzz$string,
+	$elm_explorations$test$Fuzz$int,
+	'title defaults to (untitled)',
+	F2(
+		function (url, size) {
+			return A2(
+				$elm_explorations$test$Expect$equal,
+				$elm$core$Result$Ok('(untitled)'),
+				A2(
+					$elm$core$Result$map,
+					function ($) {
+						return $.title;
+					},
+					A2(
+						$elm$json$Json$Decode$decodeValue,
+						$author$project$PhotoGroove$photoDecoder,
+						$elm$json$Json$Encode$object(
+							_List_fromArray(
+								[
+									_Utils_Tuple2(
+									'url',
+									$elm$json$Json$Encode$string(url)),
+									_Utils_Tuple2(
+									'size',
+									$elm$json$Json$Encode$int(size))
+								])))));
+		}));
 var $elm_explorations$test$Test$describe = F2(
 	function (untrimmedDesc, tests) {
 		var desc = $elm$core$String$trim(untrimmedDesc);
@@ -3623,16 +4601,10 @@ var $elm_explorations$test$Test$Runner$Thunk = function (a) {
 var $elm_explorations$test$Test$Runner$emptyDistribution = function (seed) {
 	return {all: _List_Nil, only: _List_Nil, seed: seed, skipped: _List_Nil};
 };
-var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
-var $elm$core$Bitwise$xor = _Bitwise_xor;
 var $elm_explorations$test$Test$Runner$fnvHash = F2(
 	function (a, b) {
 		return ((a ^ b) * 16777619) >>> 0;
 	});
-var $elm$core$String$foldr = _String_foldr;
-var $elm$core$String$toList = function (string) {
-	return A3($elm$core$String$foldr, $elm$core$List$cons, _List_Nil, string);
-};
 var $elm_explorations$test$Test$Runner$fnvHashString = F2(
 	function (hash, str) {
 		return A3(
@@ -3645,59 +4617,6 @@ var $elm_explorations$test$Test$Runner$fnvHashString = F2(
 				$elm$core$String$toList(str)));
 	});
 var $elm_explorations$test$Test$Runner$fnvInit = 2166136261;
-var $elm$random$Random$Generator = function (a) {
-	return {$: 'Generator', a: a};
-};
-var $elm$random$Random$Seed = F2(
-	function (a, b) {
-		return {$: 'Seed', a: a, b: b};
-	});
-var $elm$core$Bitwise$and = _Bitwise_and;
-var $elm$core$Basics$negate = function (n) {
-	return -n;
-};
-var $elm$random$Random$next = function (_v0) {
-	var state0 = _v0.a;
-	var incr = _v0.b;
-	return A2($elm$random$Random$Seed, ((state0 * 1664525) + incr) >>> 0, incr);
-};
-var $elm$random$Random$peel = function (_v0) {
-	var state = _v0.a;
-	var word = (state ^ (state >>> ((state >>> 28) + 4))) * 277803737;
-	return ((word >>> 22) ^ word) >>> 0;
-};
-var $elm$random$Random$int = F2(
-	function (a, b) {
-		return $elm$random$Random$Generator(
-			function (seed0) {
-				var _v0 = (_Utils_cmp(a, b) < 0) ? _Utils_Tuple2(a, b) : _Utils_Tuple2(b, a);
-				var lo = _v0.a;
-				var hi = _v0.b;
-				var range = (hi - lo) + 1;
-				if (!((range - 1) & range)) {
-					return _Utils_Tuple2(
-						(((range - 1) & $elm$random$Random$peel(seed0)) >>> 0) + lo,
-						$elm$random$Random$next(seed0));
-				} else {
-					var threshhold = (((-range) >>> 0) % range) >>> 0;
-					var accountForBias = function (seed) {
-						accountForBias:
-						while (true) {
-							var x = $elm$random$Random$peel(seed);
-							var seedN = $elm$random$Random$next(seed);
-							if (_Utils_cmp(x, threshhold) < 0) {
-								var $temp$seed = seedN;
-								seed = $temp$seed;
-								continue accountForBias;
-							} else {
-								return _Utils_Tuple2((x % range) + lo, seedN);
-							}
-						}
-					};
-					return accountForBias(seed0);
-				}
-			});
-	});
 var $elm$random$Random$map3 = F4(
 	function (func, _v0, _v1, _v2) {
 		var genA = _v0.a;
@@ -3720,11 +4639,6 @@ var $elm$random$Random$map3 = F4(
 			});
 	});
 var $elm$core$Bitwise$or = _Bitwise_or;
-var $elm$random$Random$step = F2(
-	function (_v0, seed) {
-		var generator = _v0.a;
-		return generator(seed);
-	});
 var $elm$random$Random$independentSeed = $elm$random$Random$Generator(
 	function (seed0) {
 		var makeIndependentSeed = F3(
@@ -3747,7 +4661,6 @@ var $elm$random$Random$initialSeed = function (x) {
 	return $elm$random$Random$next(
 		A2($elm$random$Random$Seed, state2, incr));
 };
-var $elm$random$Random$maxInt = 2147483647;
 var $elm_explorations$test$Test$Runner$batchDistribute = F4(
 	function (hashed, runs, test, prev) {
 		var next = A4($elm_explorations$test$Test$Runner$distributeSeedsHelp, hashed, runs, prev.seed, test);
@@ -4186,7 +5099,6 @@ var $author$project$Console$Text$render = F2(
 					texts));
 		}
 	});
-var $elm$json$Json$Encode$string = _Json_wrap;
 var $author$project$Test$Reporter$Console$textToValue = F2(
 	function (useColor, txt) {
 		return $elm$json$Json$Encode$string(
@@ -4221,19 +5133,6 @@ var $elm$json$Json$Encode$list = F2(
 				_Json_emptyArray(_Utils_Tuple0),
 				entries));
 	});
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
 var $author$project$Test$Reporter$Json$reportBegin = function (_v0) {
 	var paths = _v0.paths;
 	var fuzzRuns = _v0.fuzzRuns;
@@ -4267,11 +5166,6 @@ var $author$project$Console$Text$Texts = function (a) {
 	return {$: 'Texts', a: a};
 };
 var $author$project$Console$Text$concat = $author$project$Console$Text$Texts;
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
 var $author$project$Console$Text$Dark = {$: 'Dark'};
 var $author$project$Console$Text$dark = function (txt) {
 	if (txt.$ === 'Text') {
@@ -4386,7 +5280,6 @@ var $elm$core$Array$fromList = function (list) {
 	}
 };
 var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
-var $elm$core$Basics$ge = _Utils_ge;
 var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
 var $elm$core$Array$getHelp = F3(
 	function (shift, index, tree) {
@@ -4582,15 +5475,6 @@ var $elm$core$Array$set = F3(
 			startShift,
 			A4($elm$core$Array$setHelp, startShift, index, value, tree),
 			tail));
-	});
-var $elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
 	});
 var $author$project$Test$Runner$Node$Vendor$Diff$step = F4(
 	function (snake_, offset, k, v) {
@@ -5765,7 +6649,6 @@ var $author$project$Test$Reporter$JUnit$encodeExtraFailure = function (_v0) {
 		});
 };
 var $elm$json$Json$Encode$float = _Json_wrap;
-var $elm$json$Json$Encode$int = _Json_wrap;
 var $author$project$Test$Reporter$JUnit$reportSummary = F2(
 	function (_v0, autoFail) {
 		var testCount = _v0.testCount;
@@ -6459,7 +7342,298 @@ var $author$project$Test$Runner$Node$run = F2(
 				update: $author$project$Test$Runner$Node$update
 			});
 	});
-var $author$project$Test$Generated$Main1603579563$main = A2(
+var $author$project$PhotoGroove$SlidHue = function (a) {
+	return {$: 'SlidHue', a: a};
+};
+var $author$project$PhotoGroove$Loading = {$: 'Loading'};
+var $author$project$PhotoGroove$Medium = {$: 'Medium'};
+var $author$project$PhotoGroove$initialModel = {activity: '', chosenSize: $author$project$PhotoGroove$Medium, hue: 5, noise: 5, ripple: 5, status: $author$project$PhotoGroove$Loading};
+var $author$project$PhotoGroove$Errored = function (a) {
+	return {$: 'Errored', a: a};
+};
+var $author$project$PhotoGroove$GotRandomPhoto = function (a) {
+	return {$: 'GotRandomPhoto', a: a};
+};
+var $author$project$PhotoGroove$Loaded = F2(
+	function (a, b) {
+		return {$: 'Loaded', a: a, b: b};
+	});
+var $author$project$PhotoGroove$setFilters = _Platform_outgoingPort(
+	'setFilters',
+	function ($) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'filters',
+					$elm$json$Json$Encode$list(
+						function ($) {
+							return $elm$json$Json$Encode$object(
+								_List_fromArray(
+									[
+										_Utils_Tuple2(
+										'amount',
+										$elm$json$Json$Encode$float($.amount)),
+										_Utils_Tuple2(
+										'name',
+										$elm$json$Json$Encode$string($.name))
+									]));
+						})($.filters)),
+					_Utils_Tuple2(
+					'url',
+					$elm$json$Json$Encode$string($.url))
+				]));
+	});
+var $author$project$PhotoGroove$urlPrefix = 'http://elm-in-action.com/';
+var $author$project$PhotoGroove$applyFilters = function (model) {
+	var _v0 = model.status;
+	switch (_v0.$) {
+		case 'Loaded':
+			var photos = _v0.a;
+			var selectedUrl = _v0.b;
+			var url = $author$project$PhotoGroove$urlPrefix + ('large/' + selectedUrl);
+			var filters = _List_fromArray(
+				[
+					{amount: model.hue / 11, name: 'Hue'},
+					{amount: model.ripple / 11, name: 'Ripple'},
+					{amount: model.noise / 11, name: 'Noise'}
+				]);
+			return _Utils_Tuple2(
+				model,
+				$author$project$PhotoGroove$setFilters(
+					{filters: filters, url: url}));
+		case 'Loading':
+			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+		default:
+			var errorMessage = _v0.a;
+			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+	}
+};
+var $elm$random$Random$Generate = function (a) {
+	return {$: 'Generate', a: a};
+};
+var $elm$random$Random$init = A2(
+	$elm$core$Task$andThen,
+	function (time) {
+		return $elm$core$Task$succeed(
+			$elm$random$Random$initialSeed(
+				$elm$time$Time$posixToMillis(time)));
+	},
+	$elm$time$Time$now);
+var $elm$random$Random$onEffects = F3(
+	function (router, commands, seed) {
+		if (!commands.b) {
+			return $elm$core$Task$succeed(seed);
+		} else {
+			var generator = commands.a.a;
+			var rest = commands.b;
+			var _v1 = A2($elm$random$Random$step, generator, seed);
+			var value = _v1.a;
+			var newSeed = _v1.b;
+			return A2(
+				$elm$core$Task$andThen,
+				function (_v2) {
+					return A3($elm$random$Random$onEffects, router, rest, newSeed);
+				},
+				A2($elm$core$Platform$sendToApp, router, value));
+		}
+	});
+var $elm$random$Random$onSelfMsg = F3(
+	function (_v0, _v1, seed) {
+		return $elm$core$Task$succeed(seed);
+	});
+var $elm$random$Random$cmdMap = F2(
+	function (func, _v0) {
+		var generator = _v0.a;
+		return $elm$random$Random$Generate(
+			A2($elm$random$Random$map, func, generator));
+	});
+_Platform_effectManagers['Random'] = _Platform_createManager($elm$random$Random$init, $elm$random$Random$onEffects, $elm$random$Random$onSelfMsg, $elm$random$Random$cmdMap);
+var $elm$random$Random$command = _Platform_leaf('Random');
+var $elm$random$Random$generate = F2(
+	function (tagger, generator) {
+		return $elm$random$Random$command(
+			$elm$random$Random$Generate(
+				A2($elm$random$Random$map, tagger, generator)));
+	});
+var $author$project$PhotoGroove$selectUrl = F2(
+	function (url, status) {
+		switch (status.$) {
+			case 'Loaded':
+				var photos = status.a;
+				return A2($author$project$PhotoGroove$Loaded, photos, url);
+			case 'Loading':
+				return status;
+			default:
+				var errorMessage = status.a;
+				return status;
+		}
+	});
+var $elm$random$Random$addOne = function (value) {
+	return _Utils_Tuple2(1, value);
+};
+var $elm$random$Random$getByWeight = F3(
+	function (_v0, others, countdown) {
+		getByWeight:
+		while (true) {
+			var weight = _v0.a;
+			var value = _v0.b;
+			if (!others.b) {
+				return value;
+			} else {
+				var second = others.a;
+				var otherOthers = others.b;
+				if (_Utils_cmp(
+					countdown,
+					$elm$core$Basics$abs(weight)) < 1) {
+					return value;
+				} else {
+					var $temp$_v0 = second,
+						$temp$others = otherOthers,
+						$temp$countdown = countdown - $elm$core$Basics$abs(weight);
+					_v0 = $temp$_v0;
+					others = $temp$others;
+					countdown = $temp$countdown;
+					continue getByWeight;
+				}
+			}
+		}
+	});
+var $elm$random$Random$weighted = F2(
+	function (first, others) {
+		var normalize = function (_v0) {
+			var weight = _v0.a;
+			return $elm$core$Basics$abs(weight);
+		};
+		var total = normalize(first) + $elm$core$List$sum(
+			A2($elm$core$List$map, normalize, others));
+		return A2(
+			$elm$random$Random$map,
+			A2($elm$random$Random$getByWeight, first, others),
+			A2($elm$random$Random$float, 0, total));
+	});
+var $elm$random$Random$uniform = F2(
+	function (value, valueList) {
+		return A2(
+			$elm$random$Random$weighted,
+			$elm$random$Random$addOne(value),
+			A2($elm$core$List$map, $elm$random$Random$addOne, valueList));
+	});
+var $author$project$PhotoGroove$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'GotActivity':
+				var activity = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{activity: activity}),
+					$elm$core$Platform$Cmd$none);
+			case 'GotRandomPhoto':
+				var photo = msg.a;
+				return $author$project$PhotoGroove$applyFilters(
+					_Utils_update(
+						model,
+						{
+							status: A2($author$project$PhotoGroove$selectUrl, photo.url, model.status)
+						}));
+			case 'ClickedPhoto':
+				var url = msg.a;
+				return $author$project$PhotoGroove$applyFilters(
+					_Utils_update(
+						model,
+						{
+							status: A2($author$project$PhotoGroove$selectUrl, url, model.status)
+						}));
+			case 'ClickedSize':
+				var size = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{chosenSize: size}),
+					$elm$core$Platform$Cmd$none);
+			case 'ClickedSurpriseMe':
+				var _v1 = model.status;
+				switch (_v1.$) {
+					case 'Loading':
+						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+					case 'Loaded':
+						if (_v1.a.b) {
+							var _v2 = _v1.a;
+							var firstPhoto = _v2.a;
+							var otherPhotos = _v2.b;
+							return A2(
+								$elm$core$Tuple$pair,
+								model,
+								A2(
+									$elm$random$Random$generate,
+									$author$project$PhotoGroove$GotRandomPhoto,
+									A2($elm$random$Random$uniform, firstPhoto, otherPhotos)));
+						} else {
+							return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+						}
+					default:
+						var errorMessage = _v1.a;
+						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'GotPhotos':
+				if (msg.a.$ === 'Ok') {
+					var photos = msg.a.a;
+					if (photos.b) {
+						var first = photos.a;
+						var rest = photos.b;
+						return $author$project$PhotoGroove$applyFilters(
+							_Utils_update(
+								model,
+								{
+									status: A2($author$project$PhotoGroove$Loaded, photos, first.url)
+								}));
+					} else {
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									status: $author$project$PhotoGroove$Errored('0 photos found')
+								}),
+							$elm$core$Platform$Cmd$none);
+					}
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'SlidHue':
+				var hue = msg.a;
+				return $author$project$PhotoGroove$applyFilters(
+					_Utils_update(
+						model,
+						{hue: hue}));
+			case 'SlidRipple':
+				var ripple = msg.a;
+				return $author$project$PhotoGroove$applyFilters(
+					_Utils_update(
+						model,
+						{ripple: ripple}));
+			default:
+				var noise = msg.a;
+				return $author$project$PhotoGroove$applyFilters(
+					_Utils_update(
+						model,
+						{noise: noise}));
+		}
+	});
+var $author$project$PhotoGrooveTests$slidHueSetsHue = A3(
+	$elm_explorations$test$Test$fuzz,
+	$elm_explorations$test$Fuzz$int,
+	'SlidHue sets the hue',
+	function (amount) {
+		return A2(
+			$elm_explorations$test$Expect$equal,
+			amount,
+			A2(
+				$author$project$PhotoGroove$update,
+				$author$project$PhotoGroove$SlidHue(amount),
+				$author$project$PhotoGroove$initialModel).a.hue);
+	});
+var $author$project$Test$Generated$Main1640409395$main = A2(
 	$author$project$Test$Runner$Node$run,
 	{
 		paths: _List_fromArray(
@@ -6467,7 +7641,7 @@ var $author$project$Test$Generated$Main1603579563$main = A2(
 		processes: 2,
 		report: $author$project$Test$Reporter$Reporter$ConsoleReport($author$project$Console$Text$UseColor),
 		runs: $elm$core$Maybe$Nothing,
-		seed: 244207070272929
+		seed: 128644490510432
 	},
 	$elm_explorations$test$Test$concat(
 		_List_fromArray(
@@ -6476,12 +7650,12 @@ var $author$project$Test$Generated$Main1603579563$main = A2(
 				$elm_explorations$test$Test$describe,
 				'PhotoGrooveTests',
 				_List_fromArray(
-					[$author$project$PhotoGrooveTests$decoderTest]))
+					[$author$project$PhotoGrooveTests$decoderTest, $author$project$PhotoGrooveTests$slidHueSetsHue]))
 			])));
-_Platform_export({'Test':{'Generated':{'Main1603579563':{'init':$author$project$Test$Generated$Main1603579563$main($elm$json$Json$Decode$int)(0)}}}});}(this));
+_Platform_export({'Test':{'Generated':{'Main1640409395':{'init':$author$project$Test$Generated$Main1640409395$main($elm$json$Json$Decode$int)(0)}}}});}(this));
 return this.Elm;
 })({});
-var pipeFilename = "/tmp/elm_test-4280.sock";
+var pipeFilename = "/tmp/elm_test-9505.sock";
 // Make sure necessary things are defined.
 if (typeof Elm === "undefined") {
   throw "test runner config error: Elm is not defined. Make sure you provide a file compiled by Elm!";

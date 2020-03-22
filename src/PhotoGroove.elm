@@ -1,5 +1,5 @@
-port module PhotoGroove exposing (main, photoDecoder)
 
+port module PhotoGroove exposing (Model, Msg(..), Photo, initialModel, main, photoDecoder, update)
 
 --module Main exposing (FilterOptions, Model, Msg(..), Photo, Status(..), ThumbnailSize(..), applyFilters, initialCmd, initialModel, main, onSlide, photoDecoder, rangeSlider, selectUrl, setFilters, sizeToString, update, urlPrefix, view, viewFilter, viewLoaded, viewSizeChooser, viewThumbnail)
 
