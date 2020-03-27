@@ -1,5 +1,5 @@
 
-port module PhotoGroove exposing (Model, Msg(..), Photo, initialModel, main, photoDecoder, update)
+port module PhotoGroove exposing (Model, Msg(..), Photo, Status(..), initialModel, main, photoDecoder, update, urlPrefix, view)
 
 --module Main exposing (FilterOptions, Model, Msg(..), Photo, Status(..), ThumbnailSize(..), applyFilters, initialCmd, initialModel, main, onSlide, photoDecoder, rangeSlider, selectUrl, setFilters, sizeToString, update, urlPrefix, view, viewFilter, viewLoaded, viewSizeChooser, viewThumbnail)
 
@@ -291,3 +291,7 @@ onSlide toMsg =
     at [ "detail", "userSlidTo" ] int
         |> Json.Decode.map toMsg
         |> on "slide"
+
+photoFromUrl : String -> Photo
+photoFromUrl url =
+    { url = url, size = 0, title = "" }
